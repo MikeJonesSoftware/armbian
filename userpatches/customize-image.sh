@@ -44,7 +44,7 @@ Main() {
 	case $RELEASE in
 		noble|jammy|focal)
 			UpdateAptGet
-			EnablemDNS
+			#EnablemDNS
 			InstallAVAHI
 			DisableIpv6
 			InstallCpuFreqUtils
