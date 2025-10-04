@@ -47,7 +47,7 @@ Main() {
 			EnablemDNS
 			#InstallAVAHI
 			DisableIpv6
-			InstallCpuFreqUtils
+			#InstallCpuFreqUtils
 			;;
 	esac
 }
