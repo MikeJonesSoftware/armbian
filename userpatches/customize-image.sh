@@ -33,7 +33,7 @@ if [ -z "${SERVICE}" ]; then
 \t<name replace-wildcards=\"yes\">%h</name>\n
 \t<service>\n
 \t\t<type>_iot-device._tcp</type>\n
-\t\t<txt-record>nickname=Generic IoT Device</txt-record>\n
+\t\t<txt-record>nickname=Avahi Generic IoT Device</txt-record>\n
 \t\t<port>80</port>\n
 \t</service>\n
 </service-group>\n"
@@ -44,8 +44,8 @@ Main() {
 	case $RELEASE in
 		noble|jammy|focal)
 			UpdateAptGet
-			#EnablemDNS
-			InstallAVAHI
+			EnablemDNS
+			#InstallAVAHI
 			DisableIpv6
 			InstallCpuFreqUtils
 			;;
@@ -69,6 +69,17 @@ EOF
 
 EnablemDNS() {
 	sed -i '/#MulticastDNS=no/s//MulticastDNS=yes/' /etc/systemd/resolved.conf
+
+	mkdir -p /etc/systemd/dnssd
+	cat > /etc/systemd/dnssd/nanopineo.dnssd << EOF
+[Service]
+Name=new-device
+Type=_iot-device._tcp
+Port=25000
+TxtText="Nickname=SystemD Generic IoT Device" "Provisioned=false"
+EOF
+	systemctl enable systemd-resolved.service
+	systemctl restart systemd-resolved.service
 }
 
 InstallAVAHI() {
