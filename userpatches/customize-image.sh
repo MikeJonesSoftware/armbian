@@ -19,52 +19,19 @@ BUILD_DESKTOP=$4
 
 # These are values I added
 
-# CPU Speed value, for both MIN and MAX
-if [ -z "$CPUSPEED" ]; then
-	CPUSPEED=816000
-fi
-
-# The AVAHI/mDNS Discovery data, use default if none specified
-# Our zeroconf service information.  This is an XML file that gets copied to /etc/avahi/services/endpoint.service
-if [ -z "${SERVICE}" ]; then
-	SERVICE="<?xml version=\"1.0\" standalone='no'?><!--*-nxml-*-->\n
-<!DOCTYPE service-group SYSTEM \"avahi-service.dtd\">\n
-<service-group>\n
-\t<name replace-wildcards=\"yes\">%h</name>\n
-\t<service>\n
-\t\t<type>_iot-device._tcp</type>\n
-\t\t<txt-record>nickname=Avahi Generic IoT Device</txt-record>\n
-\t\t<port>80</port>\n
-\t</service>\n
-</service-group>\n"
-fi
-
 
 Main() {
 	case $RELEASE in
 		noble|jammy|focal)
 			UpdateAptGet
 			EnablemDNS
-			#InstallAVAHI
 			DisableIpv6
-			#InstallCpuFreqUtils
 			;;
 	esac
 }
 
 UpdateAptGet() {
 	apt update -y
-}
-
-InstallCpuFreqUtils() {
-	apt install cpufrequtils -y
-	cat > /etc/default/cpufrequtils << EOF
-ENABLE=true
-MIN_SPEED=$CPUSPEED
-MAX_SPEED=$CPUSPEED
-GOVERNOR=performance
-EOF
-	/etc/init.d/cpufrequtils restart
 }
 
 EnablemDNS() {
@@ -76,16 +43,10 @@ EnablemDNS() {
 Name=new-device
 Type=_iot-device._tcp
 Port=25000
-TxtText="Nickname=SystemD Generic IoT Device" "Provisioned=false"
+TxtText="Nickname=Uninitialized IoT Device"
 EOF
 	systemctl enable systemd-resolved.service
 	systemctl restart systemd-resolved.service
-}
-
-InstallAVAHI() {
-	apt install -y avahi-daemon libnss-mdns libnss-mymachines
-	echo -e ${SERVICE} > /etc/avahi/services/endpoint.service
-	chmod 666 /etc/avahi/services/endpoint.service		# ensure the file is writable by user without elevated privileges
 }
 
 # Disables ipv6 on the ethernet port and in avahi.  The reason is that an AVAHI timing bug on ipv6 can
@@ -100,7 +61,7 @@ InstallAVAHI() {
 # This must be called ***AFTER*** InstallAVAHI() because it modifies an avahi config file
 DisableIpv6() {
 	# Ensure that ipv6 is disabled in avahi
-	sed -i '/^.*use-ipv6=.*/s//use-ipv6=no/' /etc/avahi/avahi-daemon.conf
+	#sed -i '/^.*use-ipv6=.*/s//use-ipv6=no/' /etc/avahi/avahi-daemon.conf
 
 	# Ensure that ipv6 is disabled on startup
 	echo "net.ipv6.conf.all.disable_ipv6=1" > /etc/sysctl.d/00_ipv6_off.conf
