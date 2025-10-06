@@ -17,8 +17,8 @@ LINUXFAMILY=$2
 BOARD=$3
 BUILD_DESKTOP=$4
 
-# These are values I added
-
+# This file should contain non hardware-specific values that are needed for the image.
+# The hardware-specific values will be specified by the ENABLE_EXTENSIONS command-line argument.
 
 Main() {
 	case $RELEASE in
