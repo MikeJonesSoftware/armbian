@@ -21,7 +21,7 @@ function post_family_tweaks__preset_configs() {
 	# When the function is executed, the variable will have already been set (to 'armbian')
 	# Therefore, you'll have to change this value after this initial bootup.
 	DISCOVERY_NAME="Web Server"
-	NICKNAME="SystemD Customized IoT Device"
+	NICKNAME="Customized IoT Device"
 	DEVICE_TYPE="_iot-device._tcp"
 	PORT=25000
 	# Finally, you'll have to manually configure the TxtText field around line 96 of this file.
