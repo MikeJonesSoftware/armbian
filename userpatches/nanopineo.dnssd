@@ -1,0 +1,5 @@
+[Service]
+Name=New Device
+Type=_iot-device._tcp
+Port=25000
+TxtText="Nickname=Door Controller" "Provisioned=false"
