@@ -3,17 +3,17 @@
 function usage() {
 	printf "\nUsage:	$0\n"
 	printf "    --board                 Name of board to target the image\n"
-	printf "    --root-pw               New root password or passphrase\n"
-	printf "    --new-user              New User account to login to\n"
-	printf "    --new-user-pw           New User password or passphrase\n"
+	printf "    --root-password         Root user password or passphrase\n"
+	printf "    --username              Non-root User account to create\n"
+	printf "    --user-password         Non-root User password or passphrase\n"
 }
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--board=*) BOARD="${1#*=}" ;;
-		--root-pw=*) ROOTPW="${1#*=}" ;;
-		--new-user=*) NEWUSER="${1#*=}" ;;
-		--new-user-pw=*) NEWUSERPW="${1#*=}" ;;
+		--root-password=*) ROOTPW="${1#*=}" ;;
+		--username=*) NEWUSER="${1#*=}" ;;
+		--user-password=*) NEWUSERPW="${1#*=}" ;;
 	esac
 	shift
 done

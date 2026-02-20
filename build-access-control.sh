@@ -25,7 +25,7 @@ if [ -z "${BOARD}" ]; then
 fi
 
 if [ -z "${ROOTPW}" ]; then
-	echo You must provide a new root password, e.g. --rootpw="new root password"
+	echo You must provide a new root password, e.g. --root-password="new root password"
 	usage
 	exit 1
 fi
@@ -36,7 +36,7 @@ if [ -z "${NEWUSER}" ]; then
 fi
 
 if [ -z "${NEWUSERPW}" ]; then
-	echo You must provide a new user password, e.g. --new-user-pw="new user password"
+	echo You must provide a new user password, e.g. --user-password="new user password"
 	usage
 	exit 1
 fi
