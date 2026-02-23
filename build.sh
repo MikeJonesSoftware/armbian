@@ -2,45 +2,47 @@
 
 function usage() {
 	printf "\nUsage:	$0\n"
-	printf "    --board                 Name of board to target the image\n"
+	printf "    --config                Name of config to use\n"
 	printf "    --root-password         Root user password or passphrase\n"
-	printf "    --username              Non-root User account to create\n"
+	printf "    --username              Non-root User account to create (default: security)\n"
 	printf "    --user-password         Non-root User password or passphrase\n"
 }
 
 while [ $# -gt 0 ]; do
 	case "$1" in
-		--board=*) BOARD="${1#*=}" ;;
-		--root-password=*) ROOTPW="${1#*=}" ;;
-		--username=*) NEWUSER="${1#*=}" ;;
-		--user-password=*) NEWUSERPW="${1#*=}" ;;
+		--config=*) CONFIG="${1#*=}" ;;
+		--root-password=*) ROOT_PASSWORD="${1#*=}" ;;
+		--username=*) NEW_USERNAME="${1#*=}" ;;
+		--user-password=*) NEW_USER_PASSWORD="${1#*=}" ;;
 	esac
 	shift
 done
 
-if [ -z "${BOARD}" ]; then
-	echo You must provide the target board hardware, e.g. --board=nanopineo
+if [ -z "${CONFIG}" ]; then
+	echo You must provide the config, e.g. --config=nanopineo-access-control
 	usage
 	exit 1
 fi
 
-if [ -z "${ROOTPW}" ]; then
-	echo You must provide a new root password, e.g. --rootpw="new root password"
+if [ -z "${ROOT_PASSWORD}" ]; then
+	echo You must provide a new root password, e.g. --root-password="new root password"
 	usage
 	exit 1
 fi
 
-if [ -z "${NEWUSER}" ]; then
-	echo You must provide a new username, e.g. --new-user="username"
-	usage
-	exit 1
-fi
-
-if [ -z "${NEWUSERPW}" ]; then
-	echo You must provide a new user password, e.g. --new-user-pw="new user password"
+if [ -z "${NEW_USER_PASSWORD}" ]; then
+	echo You must provide a new user password, e.g. --user-password="new user password"
 	usage
 	exit 1
 fi
 
 # Call Armbian to build the image
-./compile.sh ${BOARD} ROOTPW=${ROOTPW} NEWUSER=${NEWUSER} NEWUSERPW=${NEWUSERPW}
+export ROOTPW=${ROOT_PASSWORD}
+export NEWUSER=${NEW_USERNAME}
+export NEWUSERPW=${NEW_USER_PASSWORD}
+
+if [ "${NEW_USERNAME}" ]; then
+	./compile.sh ${CONFIG} ROOTPW=${ROOT_PASSWORD} NEWUSER=${NEW_USERNAME} NEWUSERPW=${NEW_USER_PASSWORD}
+else
+	./compile.sh ${CONFIG} ROOTPW=${ROOT_PASSWORD} NEWUSERPW=${NEW_USER_PASSWORD}
+fi

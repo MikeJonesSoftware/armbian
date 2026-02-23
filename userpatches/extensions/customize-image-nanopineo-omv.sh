@@ -43,7 +43,7 @@ function post_family_tweaks__preset_configs() {
 	#    ROOTPW - the new root password
 	#    NEWUSER - the new username
 	#    NEWUSERPW - the new user password
-    cat > "${SDCARD}"/root/.not_logged_in_yet << EOF
+	cat > "${SDCARD}"/root/.not_logged_in_yet << EOF
 	PRESET_NET_CHANGE_DEFAULTS=1
 	PRESET_NET_ETHERNET_ENABLED=1
 	PRESET_NET_WIFI_ENABLED=0
@@ -87,21 +87,21 @@ EOF
 <?xml version="1.0" standalone='no'?>
 <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
 <service-group>
-    <name replace-wildcards="yes">%h</name>
-    <service>
-        <type>_iot-device._tcp</type>
+	<name replace-wildcards="yes">%h</name>
+	<service>
+		<type>_iot-device._tcp</type>
 		<txt-record>nickname=Initialized NanoPi NEO OpenMediaVault</txt-record>
-        <port>8080</port>
-    </service>
+		<port>8080</port>
+	</service>
 </service-group>
 AVAHIEOF
 	systemctl restart avahi-daemon.service
 
 
 	echo "Configuring user sudo rights..."
-	sed -i '/bin/s//bin:\/home\/'"$NEWUSER"'\/bin/' /etc/environment
-        echo "$NEWUSER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/00-$NEWUSER
-        echo 'Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/home/'"$NEWUSER"'/bin"' >> /etc/sudoers.d/00-$NEWUSER
+	sed -i '/bin/s//bin:\/home\/$NEWUSER\/bin/' /etc/environment
+		echo "$NEWUSER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/00-$NEWUSER
+		echo 'Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/home/$NEWUSER/bin"' >> /etc/sudoers.d/00-$NEWUSER
 EOF
 
 
