@@ -73,6 +73,10 @@ EOF
 	# 	dnssd: mDNS/DNS-SD service discovery
 
 	cat > "${SDCARD}"/root/provisioning.sh << EOF
+	# Discover the ethernet interface name
+	export ETHERNET_INTERFACE=\$(/usr/bin/ls /sys/class/net | /usr/bin/grep -v 'lo' | /usr/bin/head -n 1)
+	echo "Detected ethernet interface: \${ETHERNET_INTERFACE}"
+
 	echo "Installing lm-sensors..."
 	apt install lm-sensors -y -qq
 	echo "Installing sysstat..."
@@ -94,6 +98,80 @@ GOVERNOR=performance
 CPUEOF
 	/etc/init.d/cpufrequtils restart
 
+	# Create a bash script that requests a refresh on the _access-control._tcp service type.
+	# This is used to prevent the switch from pruning the _access-control._tcp service type
+	cat > /usr/local/bin/mdns-pulse.sh << PULSEEOF
+#!/bin/bash
+# Force a fresh process environment to trigger a real wire-level mDNS probe
+/bin/sh -c "/usr/bin/avahi-browse -rt _access-control._tcp --terminate" > /dev/null 2>&1
+PULSEEOF
+
+	chmod +x /usr/local/bin/mdns-pulse.sh
+
+	# Create a systemd service that executes the mdns-pulse.sh script
+	cat > /etc/systemd/system/mdns-pulse.service << PULSESERVICEEOF
+[Unit]
+Description=Periodic mDNS Pulse to prevent Switch Pruning
+After=network.target avahi-daemon.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mdns-pulse.sh
+#CPUSchedulingPolicy=fifo
+#CPUSchedulingPriority=99
+
+[Install]
+WantedBy=multi-user.target
+PULSESERVICEEOF
+
+	# Create a systemd timer that executes the mdns-pulse.service every 90 seconds
+	cat > /etc/systemd/system/mdns-pulse.timer << PULSETIMEREOF
+[Unit]
+Description=Run mDNS Pulse every 90 seconds
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=90s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
+PULSETIMEREOF
+
+	systemctl daemon-reload
+	systemctl enable --now mdns-pulse.timer
+
+
+	# --- [server] section ---
+	sed -i "s/^#\?host-name=.*/host-name=${BOARD}/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?domain-name=.*/domain-name=local/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?allow-interfaces=.*/allow-interfaces=\${ETHERNET_INTERFACE}/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?check-response-ttl=.*/check-response-ttl=no/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?use-iff-running=.*/use-iff-running=no/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?cache-entries-max=.*/cache-entries-max=0/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^ratelimit-interval-usec=.*/ratelimit-interval-usec=0/" /etc/avahi/avahi-daemon.conf
+
+	# --- [wide-area] section ---
+	sed -i "s/^enable-wide-area=.*/enable-wide-area=no/" /etc/avahi/avahi-daemon.conf
+
+	# --- [publish] section ---
+	sed -i "s/^#\?publish-addresses=.*/publish-addresses=yes/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^publish-hinfo=.*/publish-hinfo=yes/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?publish-domain=.*/publish-domain=yes/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^publish-a-on-ipv6=.*/publish-a-on-ipv6=yes/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?publish-aaaa-on-ipv4=.*/publish-aaaa-on-ipv4=yes/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?disable-publishing=.*/disable-publishing=no/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?disable-user-service-publishing=.*/disable-user-service-publishing=no/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?add-service-cookie=.*/add-service-cookie=yes/" /etc/avahi/avahi-daemon.conf
+
+	# --- [rlimits] section ---
+	sed -i "s/^#\?rlimit-data=.*/rlimit-data=33554432/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?rlimit-nproc=.*/rlimit-nproc=10/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?rlimit-nofile=.*/rlimit-nofile=1024/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?rlimit-core=.*/rlimit-core=0/"
+	sed -i "s/^#\?rlimit-stack=.*/rlimit-stack=8388608/" /etc/avahi/avahi-daemon.conf
+	sed -i "s/^#\?rlimit-fsize=.*/rlimit-fsize=0/" /etc/avahi/avahi-daemon.conf
+	
 	cat > /etc/avahi/services/device.service << AVAHIEOF
 <?xml version="1.0" standalone='no'?>
 <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
@@ -101,12 +179,12 @@ CPUEOF
 	<name replace-wildcards="yes">%h</name>
 	<service>
 		<type>_access-control._tcp</type>
+		<port>25000</port>
 		<txt-record>endpointId=null</txt-record>
 		<txt-record>provisioned=false</txt-record>
 		<txt-record>assigned=false</txt-record>
 		<txt-record>nickname=Door Controller</txt-record>
 		<txt-record>type=doorController</txt-record>
-		<port>80</port>
 	</service>
 </service-group>
 AVAHIEOF
