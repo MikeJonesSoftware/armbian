@@ -83,12 +83,19 @@ EOF
 	echo "Installing vi..."
 	apt install nvi -y -qq
 
-	# Create a bash script that requests a refresh on the iot-device._tcp service type.
-	# This is used to prevent the switch from pruning the iot-device._tcp service type
+	# Create a bash script that requests a refresh on the _iot-device._tcp service type.
+	# This is used to prevent the switch from pruning the _iot-device._tcp service type
 	cat > /usr/local/bin/mdns-pulse.sh << PULSEEOF
 #!/bin/bash
 # Force a fresh process environment to trigger a real wire-level mDNS probe
-/bin/sh -c "/usr/bin/avahi-browse -rt iot-device._tcp --terminate" > /dev/null 2>&1
+#/bin/sh -c "/usr/bin/avahi-browse -rt _iot-device._tcp --terminate" > /dev/null 2>&1
+#/bin/sh -c "/usr/bin/avahi-resolve -n $(hostname).local -4" > /dev/null 2>&1
+
+# Use a timestamp to ensure the TXT record is unique every 90 seconds
+NONCE=$(date +%s)
+
+# Use -c to allow the shell to handle the background process and PID
+/bin/sh -c "avahi-publish -s 'Heartbeat-$(hostname)' _heartbeat._tcp 9999 'v=$NONCE' & sleep 2; kill \$!"
 PULSEEOF
 
 	chmod +x /usr/local/bin/mdns-pulse.sh

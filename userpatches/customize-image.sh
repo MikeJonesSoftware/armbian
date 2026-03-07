@@ -23,7 +23,7 @@ AVAHI_SERVICE=$(cat <<EOF
 <service-group>
 	<name replace-wildcards="yes">%h</name>
 	<service>
-		<type>_iot-device._tcp</type>
+		<type>_ssh._tcp</type>
 		<txt-record>nickname=Uninitialized IoT Device</txt-record>
 		<port>9000</port>
 	</service>
@@ -79,7 +79,7 @@ EnableSystemdResolved() {
 	cat > /etc/systemd/dnssd/iotdevice.dnssd << EOF
 [Service]
 Name=new-device
-Type=_iot-device._tcp
+Type=_ssh._tcp
 Port=25000
 TxtText="Nickname=Uninitialized IoT Device"
 EOF
